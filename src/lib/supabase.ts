@@ -25,13 +25,25 @@ const createFallbackClient = () => {
       }),
       insert: async () => ({ error: null }),
       update: async () => ({ error: null })
-    })
+    }),
+    rpc: async () => ({ data: null, error: null })
   };
 };
 
-// Create the Supabase client or fallback
+// Create the Supabase client with proper headers and settings
 export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+      global: {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseAnonKey,
+        },
+      },
+    })
   : createFallbackClient() as any;
 
 export type UserProfile = {

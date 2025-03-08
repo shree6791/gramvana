@@ -13,6 +13,7 @@ const Onboarding = () => {
   const [enableMealPlanning, setEnableMealPlanning] = useState(true);
   const [bodyWeight, setBodyWeight] = useState<number>(150);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const { updateProfile } = useAuth();
   const navigate = useNavigate();
@@ -49,9 +50,10 @@ const Onboarding = () => {
   
   const completeOnboarding = async () => {
     setIsLoading(true);
+    setError('');
     
     try {
-      // Save preferences to Supabase profile
+      // Save preferences to profile
       await updateProfile({
         dietaryPreferences,
         healthGoals,
@@ -60,13 +62,11 @@ const Onboarding = () => {
         bodyWeight
       });
       
-      // Mark as onboarded in localStorage for compatibility with existing code
-      localStorage.setItem('isOnboarded', 'true');
-      
       // Navigate to home
       navigate('/home');
     } catch (error) {
       console.error('Error saving onboarding data:', error);
+      setError('Failed to save your preferences. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +125,12 @@ const Onboarding = () => {
                 ))}
               </div>
             </div>
+            
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
             
             {step === 1 && (
               <div className="slide-in">

@@ -246,21 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!user) return;
 
-      if (isSupabaseConfigured) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            ...updatedProfile,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (error) {
-          console.error('Error updating profile:', error);
-        }
-      }
-      
-      // Update local profile state
+      // Always update local state first for immediate UI feedback
       setProfile(prev => prev ? { ...prev, ...updatedProfile } : null);
       
       // Update localStorage for compatibility with existing code
@@ -279,8 +265,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updatedProfile.bodyWeight) {
         localStorage.setItem('bodyWeight', String(updatedProfile.bodyWeight));
       }
+      
+      // Mark as onboarded in localStorage
+      if (updatedProfile.dietaryPreferences && updatedProfile.dietaryPreferences.length > 0) {
+        localStorage.setItem('isOnboarded', 'true');
+      }
+
+      // If Supabase is not configured, we're done after updating localStorage
+      if (!isSupabaseConfigured) {
+        return;
+      }
+
+      // Get API key from environment variables
+      const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+      // For Supabase, attempt to update the remote profile
+      // This is a best-effort operation - we don't block the UI on it
+      try {
+        // Use POST method instead of PATCH to avoid CORS issues
+        const { error } = await supabase.rpc('update_profile', {
+          profile_data:{
+            p_id: user.id, // Use the actual user ID from the session
+            updated_at: new Date().toISOString(),
+            ...updatedProfile,
+          }
+        }, {
+          headers: {
+            'apikey': apiKey,
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (error) {
+          console.error('Error updating profile via RPC:', error);
+          
+          // Fallback to direct update if RPC fails
+          try {
+            const { error: directError } = await supabase
+              .from('profiles')
+              .update({
+                ...updatedProfile,
+                p_id: user.id, 
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', user.id)
+              .select();
+              
+            if (directError) {
+              console.error('Error updating profile directly:', directError);
+            }
+          } catch (directErr) {
+            console.error('Exception during direct profile update:', directErr);
+          }
+        }
+      } catch (err) {
+        console.error('Exception during profile update:', err);
+        // We don't rethrow here because we've already updated the local state
+        // and we don't want to block the UI flow
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error in updateProfile:', error);
     }
   };
 
