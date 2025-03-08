@@ -27,6 +27,45 @@ body {
   @apply bg-gray-50 transition-colors duration-200;
 }
 
+/* Container width adjustments for different screen sizes */
+.container {
+  @apply px-4 mx-auto;
+  max-width: 100%;
+}
+
+@screen sm {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@screen md {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@screen lg {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@screen xl {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+/* Responsive text sizes */
+h1 {
+  @apply text-2xl md:text-3xl lg:text-4xl;
+}
+
+h2 {
+  @apply text-xl md:text-2xl lg:text-3xl;
+}
+
 /* Dark mode styles */
 .dark body {
   @apply bg-gray-900;
@@ -100,27 +139,98 @@ body {
   }
 }
 
+/* Responsive button styles */
 .btn-primary {
   @apply bg-green-700 hover:bg-green-800 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200;
+  @apply text-sm md:text-base;
 }
 
 .btn-secondary {
   @apply bg-indigo-900 hover:bg-indigo-950 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200;
+  @apply text-sm md:text-base;
 }
 
 .btn-outline {
   @apply border border-green-700 text-green-700 hover:bg-green-50 font-medium py-2 px-4 rounded-lg transition-all duration-200;
+  @apply text-sm md:text-base;
 }
 
+/* Responsive card styles */
 .card {
   @apply bg-white rounded-xl shadow-md overflow-hidden transition-all duration-200 hover:shadow-lg;
+  @apply w-full;
 }
 
+/* Responsive form styles */
 .input-field {
   @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+  @apply text-sm md:text-base;
 }
 
 /* Dark mode input field */
 .dark .input-field {
   @apply bg-gray-700 border-gray-600 text-white;
+}
+
+/* Responsive grid layouts */
+.responsive-grid {
+  @apply grid gap-4;
+  @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+/* Responsive padding and margins */
+.section-padding {
+  @apply py-6 md:py-8 lg:py-12;
+}
+
+.content-margin {
+  @apply mb-4 md:mb-6 lg:mb-8;
+}
+
+/* Responsive navigation */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4 shadow-md z-40;
+  height: 64px;
+}
+
+/* Hide bottom navigation on larger screens */
+@screen lg {
+  .bottom-nav {
+    @apply hidden;
+  }
+  
+  .pb-16 {
+    @apply pb-0;
+  }
+}
+
+/* Responsive images */
+.responsive-image {
+  @apply w-full h-auto object-cover;
+  @apply rounded-lg;
+}
+
+/* Responsive typography */
+.text-responsive {
+  @apply text-sm md:text-base lg:text-lg;
+}
+
+.heading-responsive {
+  @apply text-xl md:text-2xl lg:text-3xl;
+  @apply font-bold;
+}
+
+/* Responsive layout containers */
+.layout-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Responsive flex layouts */
+.flex-responsive {
+  @apply flex flex-col md:flex-row;
+}
+
+/* Responsive spacing */
+.spacing-responsive {
+  @apply space-y-4 md:space-y-6 lg:space-y-8;
 }

@@ -8,6 +8,7 @@ import MealPlanner from './components/MealPlanner';
 import Profile from './components/Profile';
 import Layout from './components/Layout';
 import LandingPage from './components/LandingPage';
+import Onboarding from './components/Onboarding';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingScreen from './components/LoadingScreen';
 
@@ -34,10 +35,8 @@ const OnboardingCheck = ({ children }: { children: React.ReactNode }) => {
     return <LoadingScreen />;
   }
   
-  // If profile exists and has preferences set, consider onboarding complete
-  const isOnboarded = profile && profile.dietaryPreferences && profile.dietaryPreferences.length > 0;
-  
-  if (!isOnboarded) {
+  // If profile doesn't exist, redirect to onboarding
+  if (!profile) {
     return <Navigate to="/onboarding" />;
   }
   
@@ -51,9 +50,6 @@ const AppRoutes = () => {
     return <LoadingScreen />;
   }
   
-  // Check if user has completed onboarding
-  const isOnboarded = profile && profile.dietaryPreferences && profile.dietaryPreferences.length > 0;
-  
   return (
     <Routes>
       {/* Public routes */}
@@ -62,11 +58,22 @@ const AppRoutes = () => {
         path="/login" 
         element={
           user 
-            ? (isOnboarded ? <Navigate to="/home" /> : <Navigate to="/onboarding" />)
+            ? <Navigate to="/home" />
             : <Login />
         } 
       />
       
+      {/* Onboarding route */}
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Protected routes */}
       <Route 
         element={
           <ProtectedRoute>
@@ -83,7 +90,8 @@ const AppRoutes = () => {
         <Route path="/profile" element={<Profile />} />
       </Route>
       
-
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 };
