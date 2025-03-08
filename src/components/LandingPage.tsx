@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check, Leaf, Heart, Zap, Award } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
+import { useAuth } from '../context/AuthContext';
 
 const LandingPage = () => {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -21,12 +24,20 @@ const LandingPage = () => {
                 Your personal assistant for healthy, plant-based meals tailored to your preferences and nutritional needs.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/login" className="btn-primary text-center">
-                  Get Started
-                </Link>
-                <a href="#features" className="btn-outline text-center">
-                  Learn More
-                </a>
+                {user ? (
+                  <Link to="/home" className="btn-primary text-center">
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link to="/login" className="btn-primary text-center">
+                      Get Started
+                    </Link>
+                    <a href="#features" className="btn-outline text-center">
+                      Learn More
+                    </a>
+                  </>
+                )}
               </div>
             </div>
             <div className="md:w-1/2">
@@ -208,10 +219,17 @@ const LandingPage = () => {
           <p className="text-xl mb-8 max-w-3xl mx-auto">
             Join thousands of users who have discovered the joy of personalized vegetarian recipes.
           </p>
-          <Link to="/login" className="inline-flex items-center bg-white text-green-700 font-medium px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
-            Get Started Now
-            <ArrowRight size={18} className="ml-2" />
-          </Link>
+          {user ? (
+            <Link to="/home" className="inline-flex items-center bg-white text-green-700 font-medium px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+              Go to Dashboard
+              <ArrowRight size={18} className="ml-2" />
+            </Link>
+          ) : (
+            <Link to="/login" className="inline-flex items-center bg-white text-green-700 font-medium px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+              Get Started Now
+              <ArrowRight size={18} className="ml-2" />
+            </Link>
+          )}
         </div>
       </section>
       

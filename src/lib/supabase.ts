@@ -54,5 +54,6 @@ export type UserProfile = {
   allergies: string[];
   enableMealPlanning: boolean;
   bodyWeight: number;
+  darkMode?: boolean;
   created_at?: string;
 };

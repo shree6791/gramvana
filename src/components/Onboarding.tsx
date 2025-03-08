@@ -99,8 +99,6 @@ const Onboarding = () => {
     'Soy', 
     'Gluten', 
     'Dairy', 
-    'Eggs', 
-    'Corn', 
     'Mushrooms', 
     'Eggplant'
   ];

@@ -28,63 +28,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      // If Supabase is not configured, use localStorage for auth simulation
-      const mockUser = localStorage.getItem('mockUser');
-      if (mockUser) {
-        const userData = JSON.parse(mockUser);
-        setUser(userData);
-        
-        // Get profile from localStorage
-        const dietaryPreferences = JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
-        const healthGoals = localStorage.getItem('healthGoals') || '';
-        const allergies = JSON.parse(localStorage.getItem('allergies') || '[]');
-        const enableMealPlanning = localStorage.getItem('enableMealPlanning') === 'true';
-        const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
-        
-        setProfile({
-          id: userData.id,
-          email: userData.email,
-          dietaryPreferences,
-          healthGoals,
-          allergies,
-          enableMealPlanning,
-          bodyWeight
-        });
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Initialize auth state
+    const initializeAuth = async () => {
+      setIsLoading(true);
       
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setIsLoading(false);
-      }
-    });
+      try {
+        // Get initial session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
+        }
 
-    return () => {
-      if (subscription) {
-        subscription.unsubscribe();
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        }
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          } else {
+            setProfile(null);
+          }
+        });
+
+        return () => {
+          if (subscription) {
+            subscription.unsubscribe();
+          }
+        };
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        // Clear any potentially invalid state
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+      } finally {
+        setIsLoading(false);
       }
     };
+
+    initializeAuth();
   }, [isSupabaseConfigured]);
 
   const fetchProfile = async (userId: string) => {
@@ -93,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -103,51 +93,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error('Error fetching profile:', error);
       } else if (data) {
-        setProfile(data as UserProfile);
+        const userProfile = data as UserProfile;
+        setProfile(userProfile);
         
-        // Sync with localStorage for compatibility
-        localStorage.setItem('dietaryPreferences', JSON.stringify(data.dietaryPreferences || []));
-        localStorage.setItem('healthGoals', data.healthGoals || '');
-        localStorage.setItem('allergies', JSON.stringify(data.allergies || []));
-        localStorage.setItem('enableMealPlanning', String(data.enableMealPlanning));
-        localStorage.setItem('bodyWeight', String(data.bodyWeight || 150));
-        localStorage.setItem('isOnboarded', data.dietaryPreferences?.length > 0 ? 'true' : 'false');
+        // Save complete profile to localStorage
+        localStorage.setItem('userProfile', JSON.stringify(userProfile));
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string) => {
-    if (!isSupabaseConfigured) {
-      // Mock signup with localStorage
-      const mockUserId = `user_${Date.now()}`;
-      const mockUser = {
-        id: mockUserId,
-        email,
-        created_at: new Date().toISOString()
-      };
-      
-      localStorage.setItem('mockUser', JSON.stringify(mockUser));
-      setUser(mockUser as any);
-      
-      // Create empty profile
-      const newProfile = {
-        id: mockUserId,
-        email,
-        dietaryPreferences: [],
-        healthGoals: '',
-        allergies: [],
-        enableMealPlanning: true,
-        bodyWeight: 150
-      };
-      
-      setProfile(newProfile);
-      
-      return { error: null };
-    }
     
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -157,15 +114,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!error && data.user) {
         // Create a profile for the new user
-        await supabase.from('profiles').insert({
+        const newProfile = {
           id: data.user.id,
           email: data.user.email,
           dietaryPreferences: [],
           healthGoals: '',
           allergies: [],
           enableMealPlanning: true,
-          bodyWeight: 150
-        });
+          bodyWeight: 150,
+          created_at: new Date().toISOString()
+        };
+
+        await supabase.from('profiles').insert([newProfile]);
+        setProfile(newProfile);
       }
 
       return { error };
@@ -176,33 +137,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!isSupabaseConfigured) {
-      // Mock signin with localStorage
-      const mockUserId = `user_${Date.now()}`;
-      const mockUser = {
-        id: mockUserId,
-        email,
-        created_at: new Date().toISOString()
-      };
-      
-      localStorage.setItem('mockUser', JSON.stringify(mockUser));
-      setUser(mockUser as any);
-      
-      // Create empty profile
-      const newProfile = {
-        id: mockUserId,
-        email,
-        dietaryPreferences: [],
-        healthGoals: '',
-        allergies: [],
-        enableMealPlanning: true,
-        bodyWeight: 150
-      };
-      
-      setProfile(newProfile);
-      
-      return { error: null };
-    }
     
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -217,111 +151,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    if (!isSupabaseConfigured) {
-      // Mock signout with localStorage
-      localStorage.removeItem('mockUser');
-      setUser(null);
-      setProfile(null);
-    } else {
-      try {
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured) {
         await supabase.auth.signOut();
-      } catch (error) {
-        console.error('Error signing out:', error);
       }
+      
+      // Clear all state and storage
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      
+      // Clear local storage
+      localStorage.removeItem('mockUser');
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('mealPlan');
+      localStorage.removeItem('savedRecipes');
+      localStorage.removeItem('recipesData');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Clear local storage
-    localStorage.removeItem('dietaryPreferences');
-    localStorage.removeItem('healthGoals');
-    localStorage.removeItem('allergies');
-    localStorage.removeItem('enableMealPlanning');
-    localStorage.removeItem('bodyWeight');
-    localStorage.removeItem('mealPlan');
-    localStorage.removeItem('savedRecipes');
-    localStorage.removeItem('recipesData');
-    localStorage.removeItem('isOnboarded');
   };
 
   const updateProfile = async (updatedProfile: Partial<UserProfile>) => {
     try {
-      if (!user) return;
+      if (!user || !profile) return;
 
-      // Always update local state first for immediate UI feedback
-      setProfile(prev => prev ? { ...prev, ...updatedProfile } : null);
+      const newProfile = { ...profile, ...updatedProfile };
       
-      // Update localStorage for compatibility with existing code
-      if (updatedProfile.dietaryPreferences) {
-        localStorage.setItem('dietaryPreferences', JSON.stringify(updatedProfile.dietaryPreferences));
-      }
-      if (updatedProfile.healthGoals) {
-        localStorage.setItem('healthGoals', updatedProfile.healthGoals);
-      }
-      if (updatedProfile.allergies) {
-        localStorage.setItem('allergies', JSON.stringify(updatedProfile.allergies));
-      }
-      if (updatedProfile.enableMealPlanning !== undefined) {
-        localStorage.setItem('enableMealPlanning', String(updatedProfile.enableMealPlanning));
-      }
-      if (updatedProfile.bodyWeight) {
-        localStorage.setItem('bodyWeight', String(updatedProfile.bodyWeight));
-      }
+      // Update local state
+      setProfile(newProfile);
       
-      // Mark as onboarded in localStorage
-      if (updatedProfile.dietaryPreferences && updatedProfile.dietaryPreferences.length > 0) {
-        localStorage.setItem('isOnboarded', 'true');
-      }
+      // Update localStorage
+      localStorage.setItem('userProfile', JSON.stringify(newProfile));
 
-      // If Supabase is not configured, we're done after updating localStorage
       if (!isSupabaseConfigured) {
         return;
       }
 
-      // Get API key from environment variables
-      const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+      // Update profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...updatedProfile,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
 
-      // For Supabase, attempt to update the remote profile
-      // This is a best-effort operation - we don't block the UI on it
-      try {
-        // Use POST method instead of PATCH to avoid CORS issues
-        const { error } = await supabase.rpc('update_profile', {
-          profile_data:{
-            p_id: user.id, // Use the actual user ID from the session
-            updated_at: new Date().toISOString(),
-            ...updatedProfile,
-          }
-        }, {
-          headers: {
-            'apikey': apiKey,
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (error) {
-          console.error('Error updating profile via RPC:', error);
-          
-          // Fallback to direct update if RPC fails
-          try {
-            const { error: directError } = await supabase
-              .from('profiles')
-              .update({
-                ...updatedProfile,
-                p_id: user.id, 
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', user.id)
-              .select();
-              
-            if (directError) {
-              console.error('Error updating profile directly:', directError);
-            }
-          } catch (directErr) {
-            console.error('Exception during direct profile update:', directErr);
-          }
-        }
-      } catch (err) {
-        console.error('Exception during profile update:', err);
-        // We don't rethrow here because we've already updated the local state
-        // and we don't want to block the UI flow
+      if (error) {
+        console.error('Error updating profile:', error);
       }
     } catch (error) {
       console.error('Error in updateProfile:', error);

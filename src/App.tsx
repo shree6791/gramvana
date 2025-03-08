@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, {  } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import Onboarding from './components/Onboarding';
 import Home from './components/Home';
 import RecipeDetail from './components/RecipeDetail';
 import Saved from './components/Saved';
@@ -21,13 +20,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!user) {
-    return <Navigate to="/" />;
+    return <Navigate to="/login" />;
   }
   
   return <>{children}</>;
 };
 
-// Check if user has completed onboarding
+// Check if user needs onboarding
 const OnboardingCheck = ({ children }: { children: React.ReactNode }) => {
   const { profile, isLoading } = useAuth();
   
@@ -35,8 +34,8 @@ const OnboardingCheck = ({ children }: { children: React.ReactNode }) => {
     return <LoadingScreen />;
   }
   
-  // If profile exists and has dietary preferences, consider onboarding complete
-  const isOnboarded = profile && (profile.dietaryPreferences?.length > 0 || localStorage.getItem('isOnboarded') === 'true');
+  // If profile exists and has preferences set, consider onboarding complete
+  const isOnboarded = profile; // && profile.dietaryPreferences && profile.dietaryPreferences.length > 0;
   
   if (!isOnboarded) {
     return <Navigate to="/onboarding" />;
@@ -53,26 +52,21 @@ const AppRoutes = () => {
   }
   
   // Check if user has completed onboarding
-  const isOnboarded = profile && (profile.dietaryPreferences?.length > 0 || localStorage.getItem('isOnboarded') === 'true');
+  const isOnboarded = profile && profile.dietaryPreferences && profile.dietaryPreferences.length > 0;
   
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={user ? (isOnboarded ? <Navigate to="/home" /> : <Navigate to="/onboarding" />) : <LandingPage />} 
-      />
+      {/* Public routes */}
+      <Route path="/" element={<LandingPage />} />
       <Route 
         path="/login" 
-        element={user ? (isOnboarded ? <Navigate to="/home" /> : <Navigate to="/onboarding" />) : <Login />} 
-      />
-      <Route 
-        path="/onboarding" 
         element={
-          <ProtectedRoute>
-            {isOnboarded ? <Navigate to="/home" /> : <Onboarding />}
-          </ProtectedRoute>
+          user 
+            ? (isOnboarded ? <Navigate to="/home" /> : <Navigate to="/onboarding" />)
+            : <Login />
         } 
       />
+      
       <Route 
         element={
           <ProtectedRoute>
@@ -88,6 +82,8 @@ const AppRoutes = () => {
         <Route path="/meal-planner" element={<MealPlanner />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
+      
+
     </Routes>
   );
 };

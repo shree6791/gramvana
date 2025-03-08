@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, ChevronRight, Moon, Bell, Calendar, Check, X, Edit2 } from 'lucide-react';
+import { User, Moon, Bell, Calendar, Check, Edit2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,8 +30,7 @@ const Profile = () => {
   ];
   
   const allergiesOptions = [
-    'Nuts', 'Soy', 'Gluten', 'Dairy', 'Eggs', 
-    'Corn', 'Mushrooms', 'Eggplant'
+    'Nuts', 'Soy', 'Gluten', 'Dairy', 'Mushrooms', 'Eggplant'
   ];
   
   useEffect(() => {
@@ -41,6 +40,14 @@ const Profile = () => {
       setAllergies(profile.allergies || []);
       setEnableMealPlanning(profile.enableMealPlanning);
       setBodyWeight(profile.bodyWeight || 150);
+      setDarkMode(profile.darkMode || false);
+      
+      // Apply dark mode on initial load
+      if (profile.darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }, [profile]);
   
@@ -55,8 +62,23 @@ const Profile = () => {
     }
   };
   
-  const handleDarkModeToggle = () => {
-    setDarkMode(!darkMode);
+  const handleDarkModeToggle = async () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    // Update DOM
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Update profile
+    try {
+      await updateProfile({ darkMode: newDarkMode });
+    } catch (error) {
+      console.error('Error updating dark mode setting:', error);
+    }
   };
   
   const handleNotificationsToggle = () => {
@@ -89,11 +111,13 @@ const Profile = () => {
   
   const saveProfile = async () => {
     setIsLoading(true);
+    let enableMealPlanning = false;
     try {
       await updateProfile({
         dietaryPreferences,
         healthGoals,
         allergies,
+        enableMealPlanning,
         bodyWeight
       });
       setIsEditing(false);
@@ -323,7 +347,7 @@ const Profile = () => {
                 type="checkbox" 
                 className="sr-only peer" 
                 checked={notifications}
-                onChange={handleNotificationsToggle}
+                onChange={() => setNotifications(!notifications)}
               />
               <div className={cn(
                 "w-11 h-6 rounded-full peer",
@@ -377,14 +401,6 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      
-      <button
-        onClick={handleLogout}
-        className="w-full p-4 flex items-center justify-center text-red-600 bg-white rounded-xl shadow-md hover:bg-red-50 transition-colors"
-      >
-        <LogOut size={20} className="mr-2" />
-        Log Out
-      </button>
     </div>
   );
 };

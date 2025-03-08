@@ -44,7 +44,9 @@ const Login = () => {
           setError(error.message);
         } else {
           // Success - user will be redirected by the auth state change
-          navigate('/home');
+          setTimeout(() => {
+            navigate('/home', { replace: true });
+          }, 0);
         }
       }
     } catch (err) {

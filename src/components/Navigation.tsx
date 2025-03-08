@@ -66,14 +66,6 @@ const Navigation = () => {
           <User size={24} />
           <span className="text-xs mt-1">Profile</span>
         </Link>
-        
-        <button 
-          onClick={handleLogout}
-          className="flex flex-col items-center p-2 rounded-lg text-gray-500 hover:text-red-600"
-        >
-          <LogOut size={24} />
-          <span className="text-xs mt-1">Logout</span>
-        </button>
       </div>
     </div>
   );

@@ -14,9 +14,62 @@
   --text-secondary: #757575;
 }
 
+/* Dark mode variables */
+.dark {
+  --background: #121212;
+  --surface: #1e1e1e;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+}
+
 body {
   font-family: 'Inter', sans-serif;
-  @apply bg-gray-50;
+  @apply bg-gray-50 transition-colors duration-200;
+}
+
+/* Dark mode styles */
+.dark body {
+  @apply bg-gray-900;
+}
+
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .text-gray-800 {
+  @apply text-gray-100;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-200;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+.dark .border-gray-100 {
+  @apply border-gray-700;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-600;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  @apply hover:bg-gray-700;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-800;
 }
 
 .slide-in {
@@ -65,4 +118,9 @@ body {
 
 .input-field {
   @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
+}
+
+/* Dark mode input field */
+.dark .input-field {
+  @apply bg-gray-700 border-gray-600 text-white;
 }

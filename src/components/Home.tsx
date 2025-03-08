@@ -289,7 +289,7 @@ const getGreeting = (): string => {
   
   if (hour >= 5 && hour < 12) {
     return 'Good Morning';
-  } else if (hour >= 12 && hour < 18) {
+  } else if (hour >= 12 && hour < 16) {
     return 'Good Afternoon';
   } else {
     return 'Good Evening';
@@ -303,6 +303,8 @@ const getMealSuggestion = (): string => {
     return 'breakfast';
   } else if (hour >= 11 && hour < 16) {
     return 'lunch';
+  } else if (hour >= 16 && hour < 19) {
+    return 'snacks';
   } else {
     return 'dinner';
   }
