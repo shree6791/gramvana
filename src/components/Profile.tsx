@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, ChevronRight, Moon, Bell, Calendar } from 'lucide-react';
+import { User, Settings, LogOut, ChevronRight, Moon, Bell, Calendar, Check, X, Edit2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,8 +15,24 @@ const Profile = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [bodyWeight, setBodyWeight] = useState<number>(150);
-  const [isEditingWeight, setIsEditingWeight] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Available options
+  const dietaryPreferencesOptions = [
+    'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 
+    'Low-Carb', 'High-Protein', 'Keto-Friendly', 'Low-Fat'
+  ];
+  
+  const healthGoalsOptions = [
+    'Weight Loss', 'Muscle Gain', 'Maintenance', 
+    'Improved Energy', 'Better Digestion'
+  ];
+  
+  const allergiesOptions = [
+    'Nuts', 'Soy', 'Gluten', 'Dairy', 'Eggs', 
+    'Corn', 'Mushrooms', 'Eggplant'
+  ];
   
   useEffect(() => {
     if (profile) {
@@ -41,29 +57,49 @@ const Profile = () => {
   
   const handleDarkModeToggle = () => {
     setDarkMode(!darkMode);
-    // In a real app, we would apply dark mode to the entire app
   };
   
   const handleNotificationsToggle = () => {
     setNotifications(!notifications);
-    // In a real app, we would handle notification permissions
   };
   
   const handleBodyWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBodyWeight(parseInt(e.target.value) || 0);
   };
   
-  const saveBodyWeight = async () => {
+  const handleDietaryToggle = (preference: string) => {
+    setDietaryPreferences(prev => 
+      prev.includes(preference) 
+        ? prev.filter(p => p !== preference)
+        : [...prev, preference]
+    );
+  };
+  
+  const handleHealthGoalChange = (goal: string) => {
+    setHealthGoals(goal);
+  };
+  
+  const handleAllergyToggle = (allergy: string) => {
+    setAllergies(prev => 
+      prev.includes(allergy) 
+        ? prev.filter(a => a !== allergy)
+        : [...prev, allergy]
+    );
+  };
+  
+  const saveProfile = async () => {
     setIsLoading(true);
-    
     try {
-      await updateProfile({ bodyWeight });
-      setIsEditingWeight(false);
-      
-      // Clear meal plan to regenerate with new protein targets
+      await updateProfile({
+        dietaryPreferences,
+        healthGoals,
+        allergies,
+        bodyWeight
+      });
+      setIsEditing(false);
       localStorage.removeItem('mealPlan');
     } catch (error) {
-      console.error('Error updating body weight:', error);
+      console.error('Error updating profile:', error);
     } finally {
       setIsLoading(false);
     }
@@ -79,13 +115,37 @@ const Profile = () => {
   };
   
   // Calculate daily protein target
-  const proteinTarget = bodyWeight; // 1g per pound
+  const proteinTarget = bodyWeight;
   
   return (
     <div className="max-w-md mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Profile</h1>
-        <p className="text-gray-600">Manage your preferences and settings</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Profile</h1>
+          <p className="text-gray-600">Manage your preferences and settings</p>
+        </div>
+        {!isEditing ? (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2 text-green-700 font-medium px-4 py-2 rounded-lg hover:bg-green-50"
+          >
+            <Edit2 size={18} />
+            Edit Profile
+          </button>
+        ) : (
+          <button
+            onClick={saveProfile}
+            className="flex items-center gap-2 bg-green-700 text-white font-medium px-4 py-2 rounded-lg hover:bg-green-800"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <span className="inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            ) : (
+              <Check size={18} />
+            )}
+            Save Changes
+          </button>
+        )}
       </div>
       
       <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
@@ -106,43 +166,23 @@ const Profile = () => {
         </div>
         
         <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h4 className="font-medium text-gray-700">Body Weight</h4>
-              {!isEditingWeight ? (
-                <p className="text-gray-800">{bodyWeight} lbs</p>
-              ) : (
-                <div className="flex items-center mt-2">
-                  <input
-                    type="number"
-                    value={bodyWeight}
-                    onChange={handleBodyWeightChange}
-                    className="w-20 px-2 py-1 border border-gray-300 rounded-md mr-2"
-                    min="50"
-                    max="400"
-                  />
-                  <span className="text-gray-600 mr-2">lbs</span>
-                  <button
-                    onClick={saveBodyWeight}
-                    className="text-green-700 text-sm font-medium flex items-center"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="inline-block h-3 w-3 border-2 border-green-700 border-t-transparent rounded-full animate-spin mr-1"></span>
-                    ) : null}
-                    Save
-                  </button>
-                </div>
-              )}
-            </div>
-            {!isEditingWeight ? (
-              <button
-                onClick={() => setIsEditingWeight(true)}
-                className="text-sm text-green-700 font-medium"
-              >
-                Edit
-              </button>
-            ) : null}
+          <div className="mb-4">
+            <h4 className="font-medium text-gray-700 mb-2">Body Weight</h4>
+            {isEditing ? (
+              <div className="flex items-center">
+                <input
+                  type="number"
+                  value={bodyWeight}
+                  onChange={handleBodyWeightChange}
+                  className="w-20 px-2 py-1 border border-gray-300 rounded-md mr-2"
+                  min="50"
+                  max="400"
+                />
+                <span className="text-gray-600">lbs</span>
+              </div>
+            ) : (
+              <p className="text-gray-800">{bodyWeight} lbs</p>
+            )}
           </div>
           
           <div className="bg-blue-50 p-4 rounded-lg mb-4">
@@ -157,7 +197,26 @@ const Profile = () => {
           
           <div className="mt-2 pt-2 border-t border-gray-100">
             <h4 className="font-medium text-gray-700 mb-2">Health Goal</h4>
-            <p className="text-gray-800">{healthGoals || 'Not set'}</p>
+            {isEditing ? (
+              <div className="space-y-2">
+                {healthGoalsOptions.map(goal => (
+                  <button
+                    key={goal}
+                    onClick={() => handleHealthGoalChange(goal)}
+                    className={cn(
+                      "w-full p-2 rounded-lg border text-left",
+                      healthGoals === goal
+                        ? "bg-green-50 border-green-500 text-green-700"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    )}
+                  >
+                    {goal}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-800">{healthGoals || 'Not set'}</p>
+            )}
           </div>
         </div>
       </div>
@@ -168,37 +227,82 @@ const Profile = () => {
         </div>
         
         <div className="p-4">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {dietaryPreferences.length > 0 ? (
-              dietaryPreferences.map((preference) => (
-                <span 
-                  key={preference} 
-                  className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-full"
+          <h4 className="font-medium text-gray-700 mb-2">Preferences</h4>
+          {isEditing ? (
+            <div className="grid grid-cols-2 gap-2">
+              {dietaryPreferencesOptions.map(preference => (
+                <button
+                  key={preference}
+                  onClick={() => handleDietaryToggle(preference)}
+                  className={cn(
+                    "p-2 rounded-lg border flex items-center justify-between",
+                    dietaryPreferences.includes(preference)
+                      ? "bg-green-50 border-green-500 text-green-700"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  )}
                 >
-                  {preference}
-                </span>
-              ))
-            ) : (
-              <p className="text-gray-500 text-sm">No preferences set</p>
-            )}
-          </div>
-          
-          <div className="mt-4 pt-2 border-t border-gray-100">
-            <h4 className="font-medium text-gray-700 mb-2">Allergies & Dislikes</h4>
+                  <span>{preference}</span>
+                  {dietaryPreferences.includes(preference) && (
+                    <Check size={16} className="text-green-600" />
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
             <div className="flex flex-wrap gap-2">
-              {allergies.length > 0 ? (
-                allergies.map((allergy) => (
+              {dietaryPreferences.length > 0 ? (
+                dietaryPreferences.map((preference) => (
                   <span 
-                    key={allergy} 
-                    className="bg-red-50 text-red-700 text-sm px-3 py-1 rounded-full"
+                    key={preference} 
+                    className="bg-green-50 text-green-700 text-sm px-3 py-1 rounded-full"
                   >
-                    {allergy}
+                    {preference}
                   </span>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No allergies set</p>
+                <p className="text-gray-500 text-sm">No preferences set</p>
               )}
             </div>
+          )}
+          
+          <div className="mt-4 pt-2 border-t border-gray-100">
+            <h4 className="font-medium text-gray-700 mb-2">Allergies & Dislikes</h4>
+            {isEditing ? (
+              <div className="grid grid-cols-2 gap-2">
+                {allergiesOptions.map(allergy => (
+                  <button
+                    key={allergy}
+                    onClick={() => handleAllergyToggle(allergy)}
+                    className={cn(
+                      "p-2 rounded-lg border flex items-center justify-between",
+                      allergies.includes(allergy)
+                        ? "bg-red-50 border-red-500 text-red-700"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    )}
+                  >
+                    <span>{allergy}</span>
+                    {allergies.includes(allergy) && (
+                      <Check size={16} className="text-red-600" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {allergies.length > 0 ? (
+                  allergies.map((allergy) => (
+                    <span 
+                      key={allergy} 
+                      className="bg-red-50 text-red-700 text-sm px-3 py-1 rounded-full"
+                    >
+                      {allergy}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-sm">No allergies set</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
