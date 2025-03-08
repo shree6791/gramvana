@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Zap, Search, Filter, Sparkles, Loader } from 'lucide-react';
+import { Clock, Zap, Search, Filter, Sparkles, Loader, RefreshCw } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { generateMultipleRecipes } from '../services/openai';
 import { Recipe } from '../types/recipe';
@@ -8,41 +8,70 @@ import { Recipe } from '../types/recipe';
 const Home = () => {
   const [greeting, setGreeting] = useState('');
   const [mealSuggestion, setMealSuggestion] = useState('');
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [recommendedRecipes, setRecommendedRecipes] = useState<Recipe[]>([]);
   const [activeFilter, setActiveFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showRefreshTooltip, setShowRefreshTooltip] = useState(true);
   
   useEffect(() => {
     setGreeting(getGreeting());
     setMealSuggestion(getMealSuggestion());
+    loadRecipes();
     
-    // Load user preferences from localStorage
-    const dietaryPreferences = JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
-    const healthGoals = localStorage.getItem('healthGoals') || '';
-    const allergies = JSON.parse(localStorage.getItem('allergies') || '[]');
-    const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
+    // Hide tooltip after 5 seconds
+    const timer = setTimeout(() => {
+      setShowRefreshTooltip(false);
+    }, 5000);
     
-    // Get time-based meal type
-    const mealType = getMealSuggestion();
-    
-    // Fetch recipes from OpenAI
-    fetchRecipes({
-      dietaryPreferences,
-      healthGoals,
-      allergies,
-      mealType,
-      bodyWeight
-    });
+    return () => clearTimeout(timer);
   }, []);
   
-  const fetchRecipes = async (params: any) => {
+  const loadRecipes = async (forceRefresh = false) => {
     try {
       setIsLoading(true);
       setError('');
       
-      const recipes = await generateMultipleRecipes(params, 5);
+      // Check localStorage first if not forcing refresh
+      if (!forceRefresh) {
+        const savedRecipesData = localStorage.getItem('recipesData');
+        if (savedRecipesData) {
+          const recipesData = JSON.parse(savedRecipesData);
+          const recipes = Object.values(recipesData) as Recipe[];
+          
+          // Get time-based recipes
+          const mealType = getMealSuggestion();
+          const filteredRecipes = recipes
+            .filter(recipe => recipe.mealType === mealType)
+            .slice(0, 5);
+          
+          if (filteredRecipes.length > 0) {
+            setAllRecipes(filteredRecipes);
+            setRecommendedRecipes(filteredRecipes);
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // If no saved recipes or forcing refresh, fetch from OpenAI
+      const dietaryPreferences = JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
+      const healthGoals = localStorage.getItem('healthGoals') || '';
+      const allergies = JSON.parse(localStorage.getItem('allergies') || '[]');
+      const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
+      const mealType = getMealSuggestion();
+      
+      const recipes = await generateMultipleRecipes({
+        dietaryPreferences,
+        healthGoals,
+        allergies,
+        mealType,
+        bodyWeight
+      }, 5);
+      
+      setAllRecipes(recipes);
       setRecommendedRecipes(recipes);
     } catch (err) {
       console.error('Error fetching recipes:', err);
@@ -55,20 +84,22 @@ const Home = () => {
   const handleFilterChange = (filter: string) => {
     if (activeFilter === filter) {
       setActiveFilter('');
-      // Reset to all recipes
-      setRecommendedRecipes([...recommendedRecipes]);
+      setRecommendedRecipes(allRecipes);
     } else {
       setActiveFilter(filter);
       
+      let filtered = [...allRecipes];
       if (filter === 'quick') {
-        setRecommendedRecipes(recommendedRecipes.filter(recipe => recipe.prepTime < 15));
+        filtered = allRecipes.filter(recipe => recipe.prepTime < 15);
       } else if (filter === 'protein') {
-        setRecommendedRecipes(recommendedRecipes.filter(recipe => recipe.protein > 20));
+        filtered = allRecipes.filter(recipe => recipe.protein > 20);
       } else if (filter === 'weight-loss') {
-        setRecommendedRecipes(recommendedRecipes.filter(recipe => 
+        filtered = allRecipes.filter(recipe => 
           recipe.tags.includes('weight-loss') || recipe.calories < 400
-        ));
+        );
       }
+      
+      setRecommendedRecipes(filtered);
     }
   };
   
@@ -76,13 +107,12 @@ const Home = () => {
     e.preventDefault();
     
     if (searchQuery.trim() === '') {
-      // Reset to all recipes
-      setRecommendedRecipes([...recommendedRecipes]);
+      setRecommendedRecipes(allRecipes);
       return;
     }
     
     const query = searchQuery.toLowerCase();
-    const filtered = recommendedRecipes.filter(recipe => 
+    const filtered = allRecipes.filter(recipe => 
       recipe.title.toLowerCase().includes(query) || 
       recipe.tags.some(tag => tag.toLowerCase().includes(query)) ||
       recipe.ingredients.some(ingredient => ingredient.toLowerCase().includes(query))
@@ -91,31 +121,9 @@ const Home = () => {
     setRecommendedRecipes(filtered);
   };
   
-  const handleSurpriseMe = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Load user preferences from localStorage
-      const dietaryPreferences = JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
-      const healthGoals = localStorage.getItem('healthGoals') || '';
-      const allergies = JSON.parse(localStorage.getItem('allergies') || '[]');
-      const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
-      
-      // Generate a random recipe
-      const recipe = await generateMultipleRecipes({
-        dietaryPreferences,
-        healthGoals,
-        allergies,
-        bodyWeight
-      }, 1);
-      
-      setRecommendedRecipes(recipe);
-    } catch (err) {
-      console.error('Error generating surprise recipe:', err);
-      setError('Failed to generate a surprise recipe. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRefresh = () => {
+    setShowRefreshTooltip(false);
+    loadRecipes(true);
   };
   
   return (
@@ -125,13 +133,29 @@ const Home = () => {
           <h1 className="text-2xl font-bold text-gray-800">{greeting}</h1>
           <p className="text-gray-600">Here are your {mealSuggestion} options</p>
         </div>
-        <button 
-          onClick={handleSurpriseMe}
-          className="bg-indigo-100 text-indigo-800 p-2 rounded-full hover:bg-indigo-200 transition-colors"
-          disabled={isLoading}
-        >
-          {isLoading ? <Loader size={20} className="animate-spin" /> : <Sparkles size={20} />}
-        </button>
+        <div className="relative">
+          <button 
+            onClick={handleRefresh}
+            className="flex items-center gap-2 bg-green-100 text-green-800 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors"
+            disabled={isLoading}
+            onMouseEnter={() => setShowRefreshTooltip(true)}
+            onMouseLeave={() => setShowRefreshTooltip(false)}
+          >
+            {isLoading ? (
+              <Loader size={18} className="animate-spin" />
+            ) : (
+              <RefreshCw size={18} className="animate-pulse" />
+            )}
+            <span className="text-sm font-medium">New Recipes</span>
+          </button>
+          
+          {showRefreshTooltip && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-gray-800 text-white text-xs rounded-lg py-2 px-3 z-10">
+              Click to get fresh recipe suggestions based on your preferences
+              <div className="absolute right-4 -top-1 w-2 h-2 bg-gray-800 transform rotate-45"></div>
+            </div>
+          )}
+        </div>
       </div>
       
       <form onSubmit={handleSearch} className="relative mb-6">
@@ -193,7 +217,7 @@ const Home = () => {
         <div className="text-center py-8">
           <p className="text-red-500">{error}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={handleRefresh}
             className="mt-4 btn-primary"
           >
             Try Again
@@ -240,7 +264,17 @@ const Home = () => {
             ))
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">No recipes found. Try a different search.</p>
+              <p className="text-gray-500">No recipes found. Try a different search or filter.</p>
+              <button 
+                onClick={() => {
+                  setActiveFilter('');
+                  setSearchQuery('');
+                  setRecommendedRecipes(allRecipes);
+                }}
+                className="mt-4 btn-primary"
+              >
+                Reset Filters
+              </button>
             </div>
           )}
         </div>
