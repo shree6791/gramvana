@@ -105,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string) => {
-    
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -120,13 +119,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           dietaryPreferences: [],
           healthGoals: '',
           allergies: [],
-          enableMealPlanning: true,
-          bodyWeight: 150,
+          enableMealPlanning: false,
+          bodyWeight: 100,
           created_at: new Date().toISOString()
         };
 
-        await supabase.from('profiles').insert([newProfile]);
-        setProfile(newProfile);
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([newProfile]);
+
+        if (!profileError) {
+          setProfile(newProfile);
+        }
       }
 
       return { error };
@@ -137,7 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -181,30 +184,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const newProfile = { ...profile, ...updatedProfile };
       
-      // Update local state
+      // Update local state immediately for better UX
       setProfile(newProfile);
-      
-      // Update localStorage
       localStorage.setItem('userProfile', JSON.stringify(newProfile));
 
-      if (!isSupabaseConfigured) {
-        return;
-      }
+      if (!isSupabaseConfigured) return;
 
-      // Update profile in Supabase
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          ...updatedProfile,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
+      // Call the stored procedure using RPC
+      const { data, error } = await supabase.rpc('update_profile', {
+        profile_data: {
+          p_id: user.id,
+          dietaryPreferences: updatedProfile.dietaryPreferences,
+          healthGoals: updatedProfile.healthGoals,
+          allergies: updatedProfile.allergies,
+          enableMealPlanning: updatedProfile.enableMealPlanning,
+          bodyWeight: updatedProfile.bodyWeight,
+          // p_dark_mode: updatedProfile.darkMode,
+          updated_at: new Date().toISOString()
+
+        }
+      });
+
+      // const { error } = await supabase.rpc('update_profile', {
+      //   profile_data: {
+      //     p_id: 'your-uuid',
+      //     allergies: ['peanuts', 'shellfish'],
+      //     bodyWeight: 70,
+      //     dietaryPreferences: ['vegan'],
+      //     enableMealPlanning: true,
+      //     healthGoals: 'lose weight',
+      //     updated_at: new Date().toISOString()
+      //   }
+      // });
 
       if (error) {
         console.error('Error updating profile:', error);
+        // Revert local state if update fails
+        setProfile(profile);
+        localStorage.setItem('userProfile', JSON.stringify(profile));
       }
     } catch (error) {
       console.error('Error in updateProfile:', error);
+      // Revert local state if update fails
+      setProfile(profile);
+      localStorage.setItem('userProfile', JSON.stringify(profile));
     }
   };
 

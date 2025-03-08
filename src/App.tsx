@@ -35,7 +35,7 @@ const OnboardingCheck = ({ children }: { children: React.ReactNode }) => {
   }
   
   // If profile exists and has preferences set, consider onboarding complete
-  const isOnboarded = profile; // && profile.dietaryPreferences && profile.dietaryPreferences.length > 0;
+  const isOnboarded = profile && profile.dietaryPreferences && profile.dietaryPreferences.length > 0;
   
   if (!isOnboarded) {
     return <Navigate to="/onboarding" />;
