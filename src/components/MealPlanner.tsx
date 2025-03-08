@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, ChevronLeft, ChevronRight, Clock, Loader } from 'lucide-react';
 import { generateMultipleRecipes } from '../services/openai';
 import { Recipe } from '../types/recipe';
+import { useAuth } from '../context/AuthContext';
 
 interface MealPlan {
   breakfast: Recipe | null;
@@ -16,22 +17,31 @@ interface WeeklyMealPlan {
 }
 
 const MealPlanner = () => {
+  const { profile } = useAuth();
   const [enableMealPlanning, setEnableMealPlanning] = useState(true);
   const [weeklyMealPlan, setWeeklyMealPlan] = useState<WeeklyMealPlan>({});
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // Get user preferences from profile or localStorage
+  const dietaryPreferences = profile?.dietaryPreferences || 
+    JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
+  const healthGoals = profile?.healthGoals || 
+    localStorage.getItem('healthGoals') || '';
+  const allergies = profile?.allergies || 
+    JSON.parse(localStorage.getItem('allergies') || '[]');
+  const bodyWeight = profile?.bodyWeight || 
+    parseInt(localStorage.getItem('bodyWeight') || '150');
+  
   // Calculate protein target based on body weight
-  const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
   const proteinTarget = bodyWeight; // 1g per pound
   
   useEffect(() => {
-    // Check if meal planning is enabled
-    const storedEnableMealPlanning = localStorage.getItem('enableMealPlanning');
-    if (storedEnableMealPlanning) {
-      setEnableMealPlanning(storedEnableMealPlanning === 'true');
-    }
+    // Check if meal planning is enabled from profile or localStorage
+    const storedEnableMealPlanning = profile?.enableMealPlanning ?? 
+      localStorage.getItem('enableMealPlanning') === 'true';
+    setEnableMealPlanning(storedEnableMealPlanning);
     
     // Load meal plan from localStorage
     const storedMealPlan = localStorage.getItem('mealPlan');
@@ -41,7 +51,7 @@ const MealPlanner = () => {
       // Generate meal plan if not found
       generateMealPlan();
     }
-  }, []);
+  }, [profile]);
   
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -70,11 +80,6 @@ const MealPlanner = () => {
     try {
       setIsLoading(true);
       setError('');
-      
-      // Load user preferences from localStorage
-      const dietaryPreferences = JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
-      const healthGoals = localStorage.getItem('healthGoals') || '';
-      const allergies = JSON.parse(localStorage.getItem('allergies') || '[]');
       
       // Calculate protein targets for each meal (total should be 95-100% of daily target)
       const breakfastProtein = Math.round(proteinTarget * 0.25); // 25% of daily protein
