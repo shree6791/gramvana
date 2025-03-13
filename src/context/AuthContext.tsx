@@ -54,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(session?.user ?? null);
             
             if (session?.user) {
+              // Only fetch the profile, don't try to create it
               await fetchProfile(session.user.id);
             } else {
               setProfile(null);
@@ -112,29 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
       });
-
-      if (!error && data.user) {
-        // Create a profile for the new user
-        const newProfile = {
-          id: data.user.id,
-          email: data.user.email,
-          dietaryPreferences: [],
-          healthGoals: '',
-          allergies: [],
-          enableMealPlanning: false,
-          bodyWeight: 100,
-          created_at: new Date().toISOString()
-        };
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([newProfile]);
-
-        if (!profileError) {
-          setProfile(newProfile);
-        }
-      }
-
+      
+      // The trigger will handle profile creation
+      // The onAuthStateChange listener will handle fetching the profile
+      
       return { error };
     } catch (error) {
       console.error('Error signing up:', error);
@@ -207,17 +189,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      // const { error } = await supabase.rpc('update_profile', {
-      //   profile_data: {
-      //     p_id: 'your-uuid',
-      //     allergies: ['peanuts', 'shellfish'],
-      //     bodyWeight: 70,
-      //     dietaryPreferences: ['vegan'],
-      //     enableMealPlanning: true,
-      //     healthGoals: 'lose weight',
-      //     updated_at: new Date().toISOString()
-      //   }
-      // });
 
       if (error) {
         console.error('Error updating profile:', error);
