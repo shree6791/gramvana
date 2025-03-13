@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import Header from './Header';
@@ -14,9 +14,24 @@ const Onboarding = () => {
   const [bodyWeight, setBodyWeight] = useState<number>(150);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [weightError, setWeightError] = useState('');
   
-  const { updateProfile } = useAuth();
+  const { profile, updateProfile } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // If profile exists and has required data, redirect to home
+    if (profile && profile.bodyWeight && profile.healthGoals) {
+      navigate('/home', { replace: true });
+    } else if (profile) {
+      // Pre-fill form with any existing profile data
+      if (profile.dietaryPreferences) setDietaryPreferences(profile.dietaryPreferences);
+      if (profile.healthGoals) setHealthGoals(profile.healthGoals);
+      if (profile.allergies) setAllergies(profile.allergies);
+      if (profile.enableMealPlanning !== undefined) setEnableMealPlanning(profile.enableMealPlanning);
+      if (profile.bodyWeight) setBodyWeight(profile.bodyWeight);
+    }
+  }, [profile, navigate]);
   
   const handleDietaryToggle = (preference: string) => {
     if (dietaryPreferences.includes(preference)) {
@@ -34,7 +49,23 @@ const Onboarding = () => {
     }
   };
   
+  const validateWeight = (): boolean => {
+    if (!bodyWeight || bodyWeight < 50 || bodyWeight > 400) {
+      setWeightError('Please enter a valid weight between 50 and 400 lbs');
+      return false;
+    }
+    setWeightError('');
+    return true;
+  };
+  
   const nextStep = () => {
+    if (step === 4) {
+      // Validate weight before completing onboarding
+      if (!validateWeight()) {
+        return;
+      }
+    }
+    
     if (step < 4) {
       setStep(step + 1);
     } else {
@@ -49,6 +80,10 @@ const Onboarding = () => {
   };
   
   const completeOnboarding = async () => {
+    if (!validateWeight()) {
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
     
@@ -63,7 +98,7 @@ const Onboarding = () => {
       });
       
       // Navigate to home
-      navigate('/home');
+      navigate('/home', { replace: true });
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       setError('Failed to save your preferences. Please try again.');
@@ -249,30 +284,40 @@ const Onboarding = () => {
                   </button>
                 </div>
                 
-                <div className="mt-4 mb-4">
+                <div className="mt-6">
                   <label htmlFor="bodyWeight" className="block text-sm font-medium text-gray-700 mb-1">
-                    Body Weight (lbs) - For protein calculations
+                    Body Weight (lbs) - Required for protein calculations
                   </label>
                   <input
                     type="number"
                     id="bodyWeight"
-                    className="input-field"
+                    className={`input-field ${weightError ? 'border-red-500 focus:ring-red-500' : ''}`}
                     value={bodyWeight}
-                    onChange={(e) => setBodyWeight(parseInt(e.target.value) || 0)}
+                    onChange={(e) => {
+                      setBodyWeight(parseInt(e.target.value) || 0);
+                      setWeightError('');
+                    }}
                     min="50"
                     max="400"
+                    required
                   />
+                  {weightError && (
+                    <p className="mt-1 text-sm text-red-600">{weightError}</p>
+                  )}
                   
                   <div className="mt-2 bg-blue-50 p-3 rounded-lg">
                     <p className="text-blue-800 text-sm">
                       <strong>Your daily protein target:</strong> {bodyWeight}g
+                    </p>
+                    <p className="text-blue-600 text-xs mt-1">
+                      We'll use this to calculate your personalized meal recommendations
                     </p>
                   </div>
                 </div>
               </div>
             )}
             
-            <div className="flex justify-between">
+            <div className="flex justify-between mt-8">
               {step > 1 ? (
                 <button
                   onClick={prevStep}
@@ -289,7 +334,7 @@ const Onboarding = () => {
               <button
                 onClick={nextStep}
                 className="btn-primary flex items-center"
-                disabled={isLoading}
+                disabled={isLoading || (step === 2 && !healthGoals)}
               >
                 {isLoading ? (
                   <span className="inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>

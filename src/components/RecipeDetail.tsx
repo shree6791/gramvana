@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Bookmark, Share2, Heart, Loader } from 'lucide-react';
 import { generateRecipe } from '../services/openai';
 import { Recipe } from '../types/recipe';
+import { useAuth } from '../context/AuthContext';
 
 const RecipeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,22 +30,13 @@ const RecipeDetail = () => {
         // If we have the recipe in localStorage, use it
         if (id && recipesData[id]) {
           setRecipe(recipesData[id]);
-        } else if (id) {
-          // Otherwise, fetch it from the API
-          // For demo purposes, we'll generate a new recipe
-          // In a real app, you would fetch the specific recipe by ID
-          
-          // Load user preferences from localStorage
-          const dietaryPreferences = JSON.parse(localStorage.getItem('dietaryPreferences') || '[]');
-          const healthGoals = localStorage.getItem('healthGoals') || '';
-          const allergies = JSON.parse(localStorage.getItem('allergies') || '[]');
-          const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
-          
+        } else if (id && profile) {
+          // Otherwise, fetch it from the API using profile data
           const newRecipe = await generateRecipe({
-            dietaryPreferences,
-            healthGoals,
-            allergies,
-            bodyWeight
+            dietaryPreferences: profile.dietaryPreferences,
+            healthGoals: profile.healthGoals,
+            allergies: profile.allergies,
+            bodyWeight: profile.bodyWeight
           });
           
           // Override the ID to match the requested ID
@@ -67,8 +60,10 @@ const RecipeDetail = () => {
       }
     };
     
-    fetchRecipe();
-  }, [id, navigate]);
+    if (profile) {
+      fetchRecipe();
+    }
+  }, [id, navigate, profile]);
   
   const handleSave = () => {
     if (!id) return;
@@ -112,8 +107,7 @@ const RecipeDetail = () => {
   if (!recipe) return null;
   
   // Calculate protein percentage of daily target
-  const bodyWeight = parseInt(localStorage.getItem('bodyWeight') || '150');
-  const dailyProteinTarget = bodyWeight; // 1g per pound
+  const dailyProteinTarget = profile?.bodyWeight || 150; // 1g per pound
   const proteinPercentage = Math.round((recipe.protein / dailyProteinTarget) * 100);
   
   return (

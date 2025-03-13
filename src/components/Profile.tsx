@@ -51,38 +51,30 @@ const Profile = () => {
     }
   }, [profile]);
   
-  const handleMealPlanningToggle = async () => {
-    const newValue = !enableMealPlanning;
-    setEnableMealPlanning(newValue);
-    
-    try {
-      await updateProfile({ enableMealPlanning: newValue });
-    } catch (error) {
-      console.error('Error updating meal planning setting:', error);
+  const handleMealPlanningToggle = () => {
+    if (isEditing) {
+      setEnableMealPlanning(!enableMealPlanning);
     }
   };
   
-  const handleDarkModeToggle = async () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    
-    // Update DOM
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Update profile
-    try {
-      await updateProfile({ darkMode: newDarkMode });
-    } catch (error) {
-      console.error('Error updating dark mode setting:', error);
+  const handleDarkModeToggle = () => {
+    if (isEditing) {
+      const newDarkMode = !darkMode;
+      setDarkMode(newDarkMode);
+      
+      // Update DOM
+      if (newDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   };
   
   const handleNotificationsToggle = () => {
-    setNotifications(!notifications);
+    if (isEditing) {
+      setNotifications(!notifications);
+    }
   };
   
   const handleBodyWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,14 +103,14 @@ const Profile = () => {
   
   const saveProfile = async () => {
     setIsLoading(true);
-    let enableMealPlanning = false;
     try {
       await updateProfile({
         dietaryPreferences,
         healthGoals,
         allergies,
         enableMealPlanning,
-        bodyWeight
+        bodyWeight,
+        darkMode
       });
       setIsEditing(false);
       localStorage.removeItem('mealPlan');
@@ -342,18 +334,20 @@ const Profile = () => {
               <Bell size={20} className="text-gray-600 mr-3" />
               <span className="text-gray-800">Notifications</span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className={`relative inline-flex items-center ${isEditing ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
               <input 
                 type="checkbox" 
                 className="sr-only peer" 
                 checked={notifications}
-                onChange={() => setNotifications(!notifications)}
+                onChange={handleNotificationsToggle}
+                disabled={!isEditing}
               />
               <div className={cn(
                 "w-11 h-6 rounded-full peer",
                 notifications ? "bg-green-600" : "bg-gray-200",
                 "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all",
-                notifications && "after:translate-x-5"
+                notifications && "after:translate-x-5",
+                !isEditing && "opacity-50"
               )}></div>
             </label>
           </div>
@@ -363,18 +357,20 @@ const Profile = () => {
               <Moon size={20} className="text-gray-600 mr-3" />
               <span className="text-gray-800">Dark Mode</span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className={`relative inline-flex items-center ${isEditing ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
               <input 
                 type="checkbox" 
                 className="sr-only peer" 
                 checked={darkMode}
                 onChange={handleDarkModeToggle}
+                disabled={!isEditing}
               />
               <div className={cn(
                 "w-11 h-6 rounded-full peer",
                 darkMode ? "bg-green-600" : "bg-gray-200",
                 "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all",
-                darkMode && "after:translate-x-5"
+                darkMode && "after:translate-x-5",
+                !isEditing && "opacity-50"
               )}></div>
             </label>
           </div>
@@ -384,18 +380,20 @@ const Profile = () => {
               <Calendar size={20} className="text-gray-600 mr-3" />
               <span className="text-gray-800">Meal Planning</span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className={`relative inline-flex items-center ${isEditing ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
               <input 
                 type="checkbox" 
                 className="sr-only peer" 
                 checked={enableMealPlanning}
                 onChange={handleMealPlanningToggle}
+                disabled={!isEditing}
               />
               <div className={cn(
                 "w-11 h-6 rounded-full peer",
                 enableMealPlanning ? "bg-green-600" : "bg-gray-200",
                 "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all",
-                enableMealPlanning && "after:translate-x-5"
+                enableMealPlanning && "after:translate-x-5",
+                !isEditing && "opacity-50"
               )}></div>
             </label>
           </div>

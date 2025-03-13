@@ -45,7 +45,7 @@ const Login = () => {
         } else {
           // Success - user will be redirected by the auth state change
           setTimeout(() => {
-            navigate('/home', { replace: true });
+            navigate('/onboarding', { replace: true });
           }, 0);
         }
       }
