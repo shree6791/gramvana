@@ -29,12 +29,13 @@ const Login = () => {
     
     try {
       if (isSignUp) {
-        // Sign up
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         if (error) {
           setError(error.message);
+          if (error.message === 'An account with this email already exists. Please log in instead.') {
+            setIsSignUp(false); // Switch to login mode
+          }
         } else {
-          // Success - user will be automatically logged in
           navigate('/onboarding');
         }
       } else {

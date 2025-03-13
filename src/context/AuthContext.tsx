@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ data: any; error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
@@ -114,13 +114,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       
-      // The trigger will handle profile creation
-      // The onAuthStateChange listener will handle fetching the profile
+      if (data?.user?.confirmation_sent_at) {
+        return {
+          data: null,
+          error: {
+            message: 'An account with this email already exists. Please log in instead.'
+          }
+        };
+      }
       
-      return { error };
+      return { data, error };
     } catch (error) {
-      console.error('Error signing up:', error);
-      return { error };
+      return {
+        data: null,
+        error: {
+          message: 'An unexpected error occurred during sign up.'
+        }
+      };
     }
   };
 
