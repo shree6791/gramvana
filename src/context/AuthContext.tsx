@@ -109,12 +109,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // First check if user exists
+      const { data: { user: existingUser } } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
-      if (data?.user?.confirmation_sent_at) {
+
+      if (existingUser) {
         return {
           data: null,
           error: {
@@ -122,8 +123,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         };
       }
-      
-      return { data, error };
+
+      // If user doesn't exist, proceed with signup
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        return {
+          data: null,
+          error: {
+            message: error.message
+          }
+        };
+      }
+
+      // Return success with data
+      return { data, error: null };
     } catch (error) {
       return {
         data: null,
@@ -193,12 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           allergies: updatedProfile.allergies,
           enableMealPlanning: updatedProfile.enableMealPlanning,
           bodyWeight: updatedProfile.bodyWeight,
-          // p_dark_mode: updatedProfile.darkMode,
           updated_at: new Date().toISOString()
-
         }
       });
-
 
       if (error) {
         console.error('Error updating profile:', error);

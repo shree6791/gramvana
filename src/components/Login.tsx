@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import Header from './Header';
 import Footer from './Footer';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signUpSuccess, setSignUpSuccess] = useState(false);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -35,8 +36,9 @@ const Login = () => {
           if (error.message === 'An account with this email already exists. Please log in instead.') {
             setIsSignUp(false); // Switch to login mode
           }
-        } else {
-          navigate('/onboarding');
+        } else if (data?.user) {
+          // Show success message for new signups only
+          setSignUpSuccess(true);
         }
       } else {
         // Sign in
@@ -45,9 +47,7 @@ const Login = () => {
           setError(error.message);
         } else {
           // Success - user will be redirected by the auth state change
-          setTimeout(() => {
-            navigate('/onboarding', { replace: true });
-          }, 0);
+          navigate('/onboarding', { replace: true });
         }
       }
     } catch (err) {
@@ -61,6 +61,42 @@ const Login = () => {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  if (signUpSuccess) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        
+        <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-green-50 to-indigo-50 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-8 w-8 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-semibold mb-2">Check Your Email</h2>
+              <p className="text-gray-600 mb-6">
+                We've sent a confirmation link to <strong>{email}</strong>. Please check your email and click the link to complete your registration.
+              </p>
+              <button
+                onClick={() => {
+                  setSignUpSuccess(false);
+                  setIsSignUp(false);
+                }}
+                className="btn-primary w-full"
+              >
+                Back to Login
+              </button>
+              <p className="mt-4 text-sm text-gray-500">
+                Didn't receive the email? Check your spam folder or try signing up again.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
