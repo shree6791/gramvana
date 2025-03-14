@@ -144,14 +144,14 @@ const Onboarding = () => {
       
       <div className="flex-1 bg-gradient-to-br from-green-50 to-indigo-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-8">
+          <div className="p-4 sm:p-8">
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-2xl font-bold text-green-700">Gramavana</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-green-700">Gramavana</h1>
               <div className="flex space-x-1">
                 {[1, 2, 3, 4].map((i) => (
                   <div 
                     key={i}
-                    className={`h-2 w-8 rounded-full ${
+                    className={`h-2 w-6 sm:w-8 rounded-full ${
                       i === step ? 'bg-green-600' : 'bg-gray-200'
                     }`}
                   ></div>
@@ -165,159 +165,161 @@ const Onboarding = () => {
               </div>
             )}
             
-            {step === 1 && (
-              <div className="slide-in">
-                <h2 className="text-xl font-semibold mb-6">Dietary Preferences</h2>
-                <p className="text-gray-600 mb-6">Select all that apply to you:</p>
-                
-                <div className="grid grid-cols-2 gap-3 mb-8">
-                  {dietaryPreferencesOptions.map((preference) => (
-                    <button
-                      key={preference}
-                      onClick={() => handleDietaryToggle(preference)}
-                      className={`p-3 rounded-lg border ${
-                        dietaryPreferences.includes(preference)
-                          ? 'bg-green-100 border-green-500 text-green-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      } transition-colors flex items-center justify-between`}
-                    >
-                      <span>{preference}</span>
-                      {dietaryPreferences.includes(preference) && (
-                        <Check size={16} className="text-green-600" />
-                      )}
-                    </button>
-                  ))}
+            <div className="max-h-[calc(100vh-16rem)] overflow-y-auto px-1">
+              {step === 1 && (
+                <div className="slide-in">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-6">Dietary Preferences</h2>
+                  <p className="text-gray-600 mb-6">Select all that apply to you:</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    {dietaryPreferencesOptions.map((preference) => (
+                      <button
+                        key={preference}
+                        onClick={() => handleDietaryToggle(preference)}
+                        className={`p-3 rounded-lg border ${
+                          dietaryPreferences.includes(preference)
+                            ? 'bg-green-100 border-green-500 text-green-700'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        } transition-colors flex items-center justify-between`}
+                      >
+                        <span>{preference}</span>
+                        {dietaryPreferences.includes(preference) && (
+                          <Check size={16} className="text-green-600" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {step === 2 && (
-              <div className="slide-in">
-                <h2 className="text-xl font-semibold mb-6">Health Goals</h2>
-                <p className="text-gray-600 mb-6">What are you looking to achieve?</p>
-                
-                <div className="space-y-3 mb-8">
-                  {healthGoalsOptions.map((goal) => (
+              )}
+              
+              {step === 2 && (
+                <div className="slide-in">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-6">Health Goals</h2>
+                  <p className="text-gray-600 mb-6">What are you looking to achieve?</p>
+                  
+                  <div className="space-y-3 mb-8">
+                    {healthGoalsOptions.map((goal) => (
+                      <button
+                        key={goal}
+                        onClick={() => setHealthGoals(goal)}
+                        className={`p-4 w-full rounded-lg border ${
+                          healthGoals === goal
+                            ? 'bg-green-100 border-green-500 text-green-700'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        } transition-colors flex items-center justify-between`}
+                      >
+                        <span>{goal}</span>
+                        {healthGoals === goal && (
+                          <Check size={18} className="text-green-600" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {step === 3 && (
+                <div className="slide-in">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-6">Allergies & Dislikes</h2>
+                  <p className="text-gray-600 mb-6">Select ingredients you want to avoid:</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                    {allergiesOptions.map((allergy) => (
+                      <button
+                        key={allergy}
+                        onClick={() => handleAllergyToggle(allergy)}
+                        className={`p-3 rounded-lg border ${
+                          allergies.includes(allergy)
+                            ? 'bg-green-100 border-green-500 text-green-700'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        } transition-colors flex items-center justify-between`}
+                      >
+                        <span>{allergy}</span>
+                        {allergies.includes(allergy) && (
+                          <Check size={16} className="text-green-600" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {step === 4 && (
+                <div className="slide-in">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-6">Meal Planning</h2>
+                  <p className="text-gray-600 mb-6">Would you like Gramavana to suggest daily meal plans based on your preferences?</p>
+                  
+                  <div className="space-y-3 mb-4">
                     <button
-                      key={goal}
-                      onClick={() => setHealthGoals(goal)}
+                      onClick={() => setEnableMealPlanning(true)}
                       className={`p-4 w-full rounded-lg border ${
-                        healthGoals === goal
+                        enableMealPlanning
                           ? 'bg-green-100 border-green-500 text-green-700'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                       } transition-colors flex items-center justify-between`}
                     >
-                      <span>{goal}</span>
-                      {healthGoals === goal && (
+                      <div>
+                        <span className="font-medium">Yes, enable meal planning</span>
+                        <p className="text-sm text-gray-500 mt-1">Get AI-powered meal suggestions daily</p>
+                      </div>
+                      {enableMealPlanning && (
                         <Check size={18} className="text-green-600" />
                       )}
                     </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {step === 3 && (
-              <div className="slide-in">
-                <h2 className="text-xl font-semibold mb-6">Allergies & Dislikes</h2>
-                <p className="text-gray-600 mb-6">Select ingredients you want to avoid:</p>
-                
-                <div className="grid grid-cols-2 gap-3 mb-8">
-                  {allergiesOptions.map((allergy) => (
+                    
                     <button
-                      key={allergy}
-                      onClick={() => handleAllergyToggle(allergy)}
-                      className={`p-3 rounded-lg border ${
-                        allergies.includes(allergy)
+                      onClick={() => setEnableMealPlanning(false)}
+                      className={`p-4 w-full rounded-lg border ${
+                        !enableMealPlanning
                           ? 'bg-green-100 border-green-500 text-green-700'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                       } transition-colors flex items-center justify-between`}
                     >
-                      <span>{allergy}</span>
-                      {allergies.includes(allergy) && (
-                        <Check size={16} className="text-green-600" />
+                      <div>
+                        <span className="font-medium">No, I'll choose recipes myself</span>
+                        <p className="text-sm text-gray-500 mt-1">Browse and select recipes manually</p>
+                      </div>
+                      {!enableMealPlanning && (
+                        <Check size={18} className="text-green-600" />
                       )}
                     </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {step === 4 && (
-              <div className="slide-in">
-                <h2 className="text-xl font-semibold mb-6">Meal Planning</h2>
-                <p className="text-gray-600 mb-6">Would you like Gramavana to suggest daily meal plans based on your preferences?</p>
-                
-                <div className="space-y-3 mb-4">
-                  <button
-                    onClick={() => setEnableMealPlanning(true)}
-                    className={`p-4 w-full rounded-lg border ${
-                      enableMealPlanning
-                        ? 'bg-green-100 border-green-500 text-green-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    } transition-colors flex items-center justify-between`}
-                  >
-                    <div>
-                      <span className="font-medium">Yes, enable meal planning</span>
-                      <p className="text-sm text-gray-500 mt-1">Get AI-powered meal suggestions daily</p>
-                    </div>
-                    {enableMealPlanning && (
-                      <Check size={18} className="text-green-600" />
-                    )}
-                  </button>
+                  </div>
                   
-                  <button
-                    onClick={() => setEnableMealPlanning(false)}
-                    className={`p-4 w-full rounded-lg border ${
-                      !enableMealPlanning
-                        ? 'bg-green-100 border-green-500 text-green-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    } transition-colors flex items-center justify-between`}
-                  >
-                    <div>
-                      <span className="font-medium">No, I'll choose recipes myself</span>
-                      <p className="text-sm text-gray-500 mt-1">Browse and select recipes manually</p>
-                    </div>
-                    {!enableMealPlanning && (
-                      <Check size={18} className="text-green-600" />
+                  <div className="mt-6">
+                    <label htmlFor="bodyWeight" className="block text-sm font-medium text-gray-700 mb-1">
+                      Body Weight (lbs) - Required for protein calculations
+                    </label>
+                    <input
+                      type="number"
+                      id="bodyWeight"
+                      className={`input-field ${weightError ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      value={bodyWeight}
+                      onChange={(e) => {
+                        setBodyWeight(parseInt(e.target.value) || 0);
+                        setWeightError('');
+                      }}
+                      min="50"
+                      max="400"
+                      required
+                    />
+                    {weightError && (
+                      <p className="mt-1 text-sm text-red-600">{weightError}</p>
                     )}
-                  </button>
-                </div>
-                
-                <div className="mt-6">
-                  <label htmlFor="bodyWeight" className="block text-sm font-medium text-gray-700 mb-1">
-                    Body Weight (lbs) - Required for protein calculations
-                  </label>
-                  <input
-                    type="number"
-                    id="bodyWeight"
-                    className={`input-field ${weightError ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    value={bodyWeight}
-                    onChange={(e) => {
-                      setBodyWeight(parseInt(e.target.value) || 0);
-                      setWeightError('');
-                    }}
-                    min="50"
-                    max="400"
-                    required
-                  />
-                  {weightError && (
-                    <p className="mt-1 text-sm text-red-600">{weightError}</p>
-                  )}
-                  
-                  <div className="mt-2 bg-blue-50 p-3 rounded-lg">
-                    <p className="text-blue-800 text-sm">
-                      <strong>Your daily protein target:</strong> {bodyWeight}g
-                    </p>
-                    <p className="text-blue-600 text-xs mt-1">
-                      We'll use this to calculate your personalized meal recommendations
-                    </p>
+                    
+                    <div className="mt-2 bg-blue-50 p-3 rounded-lg">
+                      <p className="text-blue-800 text-sm">
+                        <strong>Your daily protein target:</strong> {bodyWeight}g
+                      </p>
+                      <p className="text-blue-600 text-xs mt-1">
+                        We'll use this to calculate your personalized meal recommendations
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
-            <div className="flex justify-between mt-8">
+            <div className="flex justify-between mt-8 pt-4 border-t border-gray-100">
               {step > 1 ? (
                 <button
                   onClick={prevStep}
